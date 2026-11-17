@@ -1,0 +1,15 @@
+# 스크리닝할 종목 목록. 한 줄에 하나: 티커 [거래소(NASD/NYSE/AMEX)]
+# 거래소를 생략하면 자동으로 찾습니다 (호출이 늘어나니 알면 적어 주세요).
+# 아래는 연결 테스트용 예시입니다. 추천 종목이 아니니 원하는 종목으로 바꾸세요.
+AAPL NASD
+MSFT NASD
+NVDA NASD
+AMZN NASD
+META NASD
+TSLA NASD
+AMD NASD
+PLTR NASD
+JPM NYSE
+XOM NYSE
+SPY AMEX
+QQQ NASD

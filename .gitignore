@@ -1,0 +1,14 @@
+# 비밀정보: 절대 커밋 금지 (.env.example만 올림)
+.env
+.env.*
+!.env.example
+token_*.json
+*.key
+*.pem
+
+# 실행 산출물 (데이터·로그·리포트는 ~/kis-bot-data 에 쌓이지만 혹시 몰라 제외)
+__pycache__/
+*.pyc
+data/
+*.log
+*.csv
