@@ -52,6 +52,20 @@ def test_form4_parse():
     assert rows[1]["code"] == "S"
 
 
+def test_drop_incomplete_bar():
+    import datetime as dt
+
+    from bot.prices import ET, drop_incomplete
+
+    df = make_df("flat", end="2026-11-18")
+    during = dt.datetime(2026, 11, 18, 12, 19, tzinfo=ET)   # 장중
+    after = dt.datetime(2026, 11, 18, 17, 30, tzinfo=ET)    # 장 마감 후
+    next_day = dt.datetime(2026, 11, 19, 9, 0, tzinfo=ET)   # 다음 날 개장 전
+    assert drop_incomplete(df, during).index[-1].date() == dt.date(2026, 11, 17)
+    assert drop_incomplete(df, after).index[-1].date() == dt.date(2026, 11, 18)
+    assert drop_incomplete(df, next_day).index[-1].date() == dt.date(2026, 11, 18)
+
+
 def test_watchlist_file(tmp_path):
     import main
 
