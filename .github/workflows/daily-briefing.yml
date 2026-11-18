@@ -6,6 +6,13 @@ on:
     # 미국장 마감 후, 화~토 한국시간 오전 7시 17분 = 월~금 UTC 22:17
     - cron: "17 22 * * 1-5"
   workflow_dispatch: {}   # Actions 화면에서 'Run workflow' 버튼으로 수동 실행
+  push:                   # 브리핑 봇 코드나 설정을 고쳐서 main에 올리면 바로 한 번 실행
+    branches: [main]
+    paths:
+      - "briefing/bot/**"
+      - "briefing/config/**"
+      - "briefing/main.py"
+      - ".github/workflows/daily-briefing.yml"
 
 permissions:
   contents: write         # 가상 계좌 상태와 보고서를 저장소에 커밋하기 위해 필요
