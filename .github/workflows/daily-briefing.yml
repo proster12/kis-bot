@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "briefing/bot/**"
+      - "!briefing/bot/notify.py"   # 알림 코드만 바뀌면 브리핑은 다시 돌리지 않음
       - "briefing/config/**"
       - "briefing/main.py"
       - ".github/workflows/daily-briefing.yml"

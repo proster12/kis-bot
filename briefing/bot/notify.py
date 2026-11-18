@@ -12,16 +12,31 @@ import requests
 log = logging.getLogger(__name__)
 
 
+def annotate(level, msg):
+    """GitHub Actions 실행 화면 맨 위에 경고/오류로 표시 (키·토큰 값은 절대 넣지 않음)."""
+    print(f"::{level} title=카카오 알림::{msg}", flush=True)
+    log.warning(msg)
+
+
 def _kakao_access_token():
     key = os.getenv("KAKAO_REST_API_KEY")
     refresh = os.getenv("KAKAO_REFRESH_TOKEN")
-    if not (key and refresh):
+    missing = [n for n, v in (("KAKAO_REST_API_KEY", key), ("KAKAO_REFRESH_TOKEN", refresh)) if not v]
+    if missing:
+        annotate("warning", f"시크릿이 비어 있어 카톡을 건너뜀: {', '.join(missing)}")
         return None
     data = {"grant_type": "refresh_token", "client_id": key, "refresh_token": refresh}
     if os.getenv("KAKAO_CLIENT_SECRET"):
         data["client_secret"] = os.getenv("KAKAO_CLIENT_SECRET")
     r = requests.post("https://kauth.kakao.com/oauth/token", data=data, timeout=15)
-    r.raise_for_status()
+    if r.status_code != 200:
+        try:
+            b = r.json()
+            detail = f"{b.get('error_code', '')} {b.get('error', '')}: {b.get('error_description', '')}"
+        except ValueError:
+            detail = r.text[:200]
+        annotate("error", f"카카오 토큰 발급 실패 (HTTP {r.status_code}) {detail}")
+        return None
     body = r.json()
     if body.get("refresh_token"):
         # 만료가 1개월 이내로 남으면 새 리프레시 토큰이 발급됩니다 → 시크릿을 바꿔 줘야 함
@@ -34,7 +49,7 @@ def send_kakao(short_text, link_url):
     try:
         token = _kakao_access_token()
     except Exception as e:
-        log.warning("카카오 토큰 발급 실패: %s", e)
+        annotate("error", f"카카오 토큰 요청 중 오류: {type(e).__name__}")
         return False
     if not token:
         return False
@@ -51,8 +66,9 @@ def send_kakao(short_text, link_url):
         timeout=15,
     )
     if r.status_code != 200:
-        log.warning("카카오 전송 실패: %s %s", r.status_code, r.text)
+        annotate("error", f"카카오 메시지 전송 실패 (HTTP {r.status_code}) {r.text[:200]}")
         return False
+    print("::notice title=카카오 알림::카톡 전송 성공", flush=True)
     return True
 
 
