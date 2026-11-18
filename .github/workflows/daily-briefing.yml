@@ -1,0 +1,58 @@
+name: 미국주식 아침 브리핑 (모의 운용)
+
+# briefing/ 폴더의 브리핑 봇을 실행합니다. 한투 봇(trader.py 등)과는 별개이며 실제 주문을 내지 않습니다.
+on:
+  schedule:
+    # 미국장 마감 후, 화~토 한국시간 오전 7시 17분 = 월~금 UTC 22:17
+    - cron: "17 22 * * 1-5"
+  workflow_dispatch: {}   # Actions 화면에서 'Run workflow' 버튼으로 수동 실행
+
+permissions:
+  contents: write         # 가상 계좌 상태와 보고서를 저장소에 커밋하기 위해 필요
+
+concurrency:
+  group: daily-briefing
+  cancel-in-progress: false
+
+jobs:
+  briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: briefing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: briefing/requirements.txt
+
+      - name: 패키지 설치
+        run: pip install -r requirements.txt pytest
+
+      - name: 자체 테스트 (가짜 데이터)
+        run: python -m pytest -q tests
+
+      - name: 브리핑 실행
+        env:
+          SEC_USER_AGENT: ${{ secrets.SEC_USER_AGENT }}
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
+          KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py
+
+      - name: 가상 계좌·보고서 저장
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 최상위 .gitignore가 data/와 *.csv를 막고 있어 -f로 이 폴더 것만 추가
+          git add -f data reports
+          git diff --cached --quiet || git commit -m "브리핑 $(date -u +%Y-%m-%d)"
+          git pull --rebase --autostash
+          git push
